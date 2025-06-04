@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>健康教育コストと効果計算アプリ</title>
+  <style>
+    body { font-family: sans-serif; margin: 2em; }
+    label { display: block; margin-top: 1em; }
+    input[type="number"] { width: 7em; }
+    .result { margin-top: 2em; font-size: 1.2em; }
+    .steps { margin-top: 1em; background: #f9f9f9; padding: 1em; border-radius: 7px; font-size: 1em; white-space: pre-line; }
+    .costs input { margin-right: 0.5em; }
+    .cost-row { display: flex; align-items: center; margin-bottom: 0.5em; }
+    .cost-row input[type="text"] { width: 8em; margin-right: 0.5em; }
+    .cost-row input[type="number"] { width: 7em; }
+    .cost-row button { margin-left: 0.5em; }
+    #copyBtn { margin-top: 0.5em; }
+    textarea { width: 99%; min-height: 2.5em; margin-top: 0.3em; }
+  </style>
+</head>
+<body>
+  <h1>健康教育コストと効果計算アプリ</h1>
+
+  <label>健康教育教室名
+    <input type="text" id="content" placeholder="例：禁煙教室">
+  </label>
+  <label>参加人数
+    <input type="number" id="participants" min="1" value="1">
+  </label>
+  
+  <div class="costs" id="costs-list"></div>
+  <button onclick="addCostRow()">コスト項目を追加</button>
+
+  <label>効果（該当人数、例：禁煙できた人数）
+    <input type="number" id="effectPeople" min="1" value="1">
+  </label>
+  <label>1人あたりの効果金額（例：医療費節約、円）
+    <input type="number" id="effectValue" min="0" value="0">
+  </label>
+
+  <label>備考
+    <textarea id="note" placeholder="自由記入（例：評価方法や対象者、課題メモ等）"></textarea>
+  </label>
+  
+  <button onclick="calculate()">計算する</button>
+  
+  <div class="result" id="result"></div>
+  <button id="copyBtn" style="display:none;" onclick="copySteps()">計算過程をコピー</button>
+  <div class="steps" id="steps"></div>
+
+  <script>
+    // コスト項目の初期化
+    let costs = [
+      { name: '人件費', value: 0 },
+      { name: '教材費', value: 0 },
+      { name: '会場費', value: 0 },
+      { name: 'その他', value: 0 },
+    ];
+
+    function renderCosts() {
+      const container = document.getElementById('costs-list');
+      container.innerHTML = '';
+      costs.forEach((cost, idx) => {
+        const row = document.createElement('div');
+        row.className = 'cost-row';
+        row.innerHTML = `
+          <input type="text" value="${cost.name}" onchange="updateCostName(${idx}, this.value)">
+          <input type="number" min="0" value="${cost.value}" onchange="updateCostValue(${idx}, this.value)">
+          <span>円</span>
+          <button onclick="removeCostRow(${idx})" ${costs.length <= 1 ? 'disabled' : ''}>削除</button>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function addCostRow() {
+      costs.push({ name: '新しいコスト', value: 0 });
+      renderCosts();
+    }
+    function removeCostRow(idx) {
+      if (costs.length > 1) {
+        costs.splice(idx, 1);
+        renderCosts();
+      }
+    }
+    function updateCostName(idx, val) {
+      costs[idx].name = val;
+    }
+    function updateCostValue(idx, val) {
+      costs[idx].value = Number(val);
+    }
+    function formatYen(val) {
+      return Number(val).toLocaleString() + "円";
+    }
+
+    function calculate() {
+      const contentName = document.getElementById('content').value || "(未入力)";
+      const note = document.getElementById('note').value;
+      const effectPeople = Number(document.getElementById('effectPeople').value);
+      const effectValue = Number(document.getElementById('effectValue').value);
+
+      // 合計コスト計算
+      const totalCost = costs.reduce((sum, c) => sum + Number(c.value), 0);
+
+      // 費用対効果と便益
+      const costEffect = effectPeople > 0 ? (totalCost / effectPeople).toFixed(0) : "－";
+      const totalBenefit = effectPeople * effectValue;
+      const netBenefit = totalBenefit - totalCost;
+
+      // 結果表示
+      document.getElementById('result').innerHTML =
+        `<strong>費用対効果：</strong> ${formatYen(costEffect)}／効果1人<br>
+         <strong>費用便益：</strong> ${formatYen(totalBenefit)} − ${formatYen(totalCost)} ＝ <span style="color:${netBenefit>=0?'green':'red'}">${formatYen(netBenefit)}</span>`;
+
+      // 計算過程テキスト生成
+      let costSteps = costs.map(c => `${c.name} ${formatYen(c.value)}`).join(' + ');
+      let stepsText =
+`＜健康教育教室名＞ ${contentName}
+
+【計算過程】
+・合計コスト：${costSteps} ＝ ${formatYen(totalCost)}
+・費用対効果：${formatYen(totalCost)} ÷ 効果人数 ${effectPeople}人 ＝ ${formatYen(costEffect)}／人
+・便益合計：効果人数 ${effectPeople}人 × 1人あたりの効果 ${formatYen(effectValue)} ＝ ${formatYen(totalBenefit)}
+・純便益：${formatYen(totalBenefit)} − ${formatYen(totalCost)} ＝ ${formatYen(netBenefit)}
+${note ? "\n【備考】\n" + note : ""}`;
+
+      document.getElementById('steps').textContent = stepsText;
+
+      // コピー用ボタンを表示
+      document.getElementById('copyBtn').style.display = "inline-block";
+    }
+
+    function copySteps() {
+      const stepsText = document.getElementById('steps').textContent;
+      navigator.clipboard.writeText(stepsText)
+        .then(() => {
+          document.getElementById('copyBtn').textContent = "コピーしました！";
+          setTimeout(() => {
+            document.getElementById('copyBtn').textContent = "計算過程をコピー";
+          }, 1300);
+        });
+    }
+
+    // 初期表示
+    renderCosts();
+  </script>
+</body>
+</html>
