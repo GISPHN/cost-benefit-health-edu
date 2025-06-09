@@ -17,6 +17,7 @@
     .cost-row button { margin-left: 0.5em; }
     #copyBtn { margin-top: 0.5em; }
     textarea { width: 99%; min-height: 2.5em; margin-top: 0.3em; }
+    #otherUnitInput { margin-left:0.5em; width:7em;}
   </style>
 </head>
 <body>
@@ -32,10 +33,23 @@
   <div class="costs" id="costs-list"></div>
   <button onclick="addCostRow()">コスト項目を追加</button>
 
-  <label>効果（該当人数、例：禁煙できた人数）
+  <label>効果（該当数、例：禁煙できた人数や成功率など）
     <input type="number" id="effectPeople" min="1" value="1">
   </label>
-  <label>1人あたりの効果金額（例：医療費節約、円）
+  <label>
+    効果の単位
+    <select id="effectUnit" onchange="toggleOtherUnitInput()">
+      <option value="人数">人数</option>
+      <option value="%成功">%成功</option>
+      <option value="血圧">血圧</option>
+      <option value="BMI">BMI</option>
+      <option value="HbA1c">HbA1c</option>
+      <option value="QALY">QALY</option>
+      <option value="その他">その他（自由入力）</option>
+    </select>
+    <input type="text" id="otherUnitInput" style="display:none;" placeholder="単位名を入力">
+  </label>
+  <label>1単位あたりの効果金額（円、金額評価できる場合のみ入力）
     <input type="number" id="effectValue" min="0" value="0">
   </label>
 
@@ -94,10 +108,30 @@
       return Number(val).toLocaleString() + "円";
     }
 
+    function toggleOtherUnitInput() {
+      const unitSelect = document.getElementById('effectUnit');
+      const otherUnitInput = document.getElementById('otherUnitInput');
+      if (unitSelect.value === 'その他') {
+        otherUnitInput.style.display = '';
+      } else {
+        otherUnitInput.style.display = 'none';
+      }
+    }
+
+    function getEffectUnit() {
+      const unitSelect = document.getElementById('effectUnit');
+      if (unitSelect.value === 'その他') {
+        return document.getElementById('otherUnitInput').value || '(単位未入力)';
+      } else {
+        return unitSelect.value;
+      }
+    }
+
     function calculate() {
       const contentName = document.getElementById('content').value || "(未入力)";
       const note = document.getElementById('note').value;
       const effectPeople = Number(document.getElementById('effectPeople').value);
+      const effectUnit = getEffectUnit();
       const effectValue = Number(document.getElementById('effectValue').value);
 
       // 合計コスト計算
@@ -110,7 +144,7 @@
 
       // 結果表示
       document.getElementById('result').innerHTML =
-        `<strong>費用対効果：</strong> ${formatYen(costEffect)}／効果1人<br>
+        `<strong>費用対効果：</strong> ${formatYen(costEffect)}／${effectUnit}<br>
          <strong>費用便益：</strong> ${formatYen(totalBenefit)} − ${formatYen(totalCost)} ＝ <span style="color:${netBenefit>=0?'green':'red'}">${formatYen(netBenefit)}</span>`;
 
       // 計算過程テキスト生成
@@ -120,8 +154,8 @@
 
 【計算過程】
 ・合計コスト：${costSteps} ＝ ${formatYen(totalCost)}
-・費用対効果：${formatYen(totalCost)} ÷ 効果人数 ${effectPeople}人 ＝ ${formatYen(costEffect)}／人
-・便益合計：効果人数 ${effectPeople}人 × 1人あたりの効果 ${formatYen(effectValue)} ＝ ${formatYen(totalBenefit)}
+・費用対効果：${formatYen(totalCost)} ÷ 効果 ${effectPeople}${effectUnit} ＝ ${formatYen(costEffect)}／${effectUnit}
+・便益合計：効果 ${effectPeople}${effectUnit} × 1${effectUnit}あたりの効果 ${formatYen(effectValue)} ＝ ${formatYen(totalBenefit)}
 ・純便益：${formatYen(totalBenefit)} − ${formatYen(totalCost)} ＝ ${formatYen(netBenefit)}
 ${note ? "\n【備考】\n" + note : ""}`;
 
@@ -144,6 +178,7 @@ ${note ? "\n【備考】\n" + note : ""}`;
 
     // 初期表示
     renderCosts();
+    toggleOtherUnitInput();
   </script>
 </body>
 </html>
