@@ -18,6 +18,8 @@
     #copyBtn { margin-top: 0.5em; }
     textarea { width: 99%; min-height: 2.5em; margin-top: 0.3em; }
     #otherUnitInput { margin-left:0.5em; width:7em;}
+    .required { color: red; font-weight: bold; }
+    .info { font-size: 0.95em; color: #555; }
   </style>
 </head>
 <body>
@@ -40,17 +42,27 @@
     効果の単位
     <select id="effectUnit" onchange="toggleOtherUnitInput()">
       <option value="人数">人数</option>
-      <option value="%成功">%成功</option>
-      <option value="血圧">血圧</option>
-      <option value="BMI">BMI</option>
-      <option value="HbA1c">HbA1c</option>
-      <option value="QALY">QALY</option>
+      <option value="%">%</option>
+      <option value="mmHg（血圧）">mmHg（血圧）</option>
+      <option value="kg（体重）">kg（体重）</option>
+      <option value="kg/m²（BMI）">kg/m²（BMI）</option>
+      <option value="mg/dL">mg/dL（血糖値、コレステロールなど）</option>
+      <option value="HbA1c（％）">HbA1c（％）</option>
+      <option value="QALY">QALY（クオリティ・アジャステッド・ライフ・イヤーズ）</option>
+      <option value="METs">METs（運動量の単位）</option>
+      <option value="点">点（スコア、満足度評価）</option>
+      <option value="回">回（行動回数、受診回数など）</option>
       <option value="その他">その他（自由入力）</option>
     </select>
     <input type="text" id="otherUnitInput" style="display:none;" placeholder="単位名を入力">
   </label>
-  <label>1単位あたりの効果金額（円、金額評価できる場合のみ入力）
-    <input type="number" id="effectValue" min="0" value="0">
+  <label>
+    1単位あたりの効果金額（円）<span class="required">（必須）</span><br>
+    <span class="info">
+      ※費用便益分析を行うため、必ず「金額」で評価してください。<br>
+      金額換算が難しい場合は仮定でも構いません（例：満足度1点向上につき〇円の価値等）。
+    </span><br>
+    <input type="number" id="effectValue" min="1" required>
   </label>
 
   <label>備考
@@ -133,6 +145,13 @@
       const effectPeople = Number(document.getElementById('effectPeople').value);
       const effectUnit = getEffectUnit();
       const effectValue = Number(document.getElementById('effectValue').value);
+
+      // 効果金額の入力必須チェック
+      if (!effectValue || effectValue <= 0) {
+        alert("1単位あたりの効果金額（円）は必須です。0より大きい金額を入力してください。");
+        document.getElementById('effectValue').focus();
+        return;
+      }
 
       // 合計コスト計算
       const totalCost = costs.reduce((sum, c) => sum + Number(c.value), 0);
