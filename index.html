@@ -20,6 +20,8 @@
     #otherUnitInput { margin-left:0.5em; width:7em;}
     .required { color: red; font-weight: bold; }
     .info { font-size: 0.95em; color: #555; }
+    footer { margin-top:3em; text-align:center; color:#777; font-size:0.95em; }
+    a.credit-link { color:#777; text-decoration:underline; }
   </style>
 </head>
 <body>
@@ -74,6 +76,12 @@
   <div class="result" id="result"></div>
   <button id="copyBtn" style="display:none;" onclick="copySteps()">計算過程をコピー</button>
   <div class="steps" id="steps"></div>
+
+  <footer>
+    作成：堀池諒（
+    <a href="https://x.com/GISPHN" target="_blank" rel="noopener" class="credit-link">@GISPHN</a>
+    ）
+  </footer>
 
   <script>
     // コスト項目の初期化
@@ -199,15 +207,5 @@ ${note ? "\n【備考】\n" + note : ""}`;
     renderCosts();
     toggleOtherUnitInput();
   </script>
-　  <!-- ...（本文はこれまでと同じ）... -->
-
-  <footer style="margin-top:3em; text-align:center; color:#777; font-size:0.95em;">
-    作成：堀池諒（
-    <a href="https://x.com/GISPHN" target="_blank" rel="noopener" style="color:#777; text-decoration:underline;">@GISPHN</a>
-    ）
-  </footer>
-</body>
-</html>
-
 </body>
 </html>
